@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO WebSocket Example</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script> <!-- Include Socket.IO library -->
+</head>
+<body>
+    <h1>WebSocket Example</h1>
+    <input type="text" id="message" placeholder="Enter your message">
+    <button onclick="sendMessage()">Send Message</button>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <script>
+        let socket = null;
+
+        function connect() {
+            socket = io('ws://localhost:9092'); // Connect to the Socket.IO server
+
+            socket.on('connect', function() {
+                setConnected(true);
+                console.log('Connected to WebSocket server');
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Disconnected from WebSocket server');
+                setConnected(false);
+            });
+
+            socket.on('connect_error', function(error) {
+                console.error('Connection error: ' + error);
+            });
+
+            // Listen for messages from the server
+            socket.on('message', function (message) {
+                showMessage(message);
+            });
+
+            // Send a message every 10 seconds (optional)
+            setInterval(function() {
+                sendMessage();
+            }, 10000);
+        }
+
+        function disconnect() {
+            if (socket !== null) {
+                socket.disconnect();
+                console.log('Disconnected from WebSocket server');
+            }
+            setConnected(false);
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message').value || 'Hello, WebSocket!';
+            if (socket && socket.connected) {
+                socket.emit('message', message);
+                console.log('Sent message: ' + message);
+            } else {
+                console.error('Unable to send message. WebSocket is not connected.');
+            }
+        }
+
+        function setConnected(connected) {
+            // Update UI or state based on connection status
+            console.log('Connection status: ' + (connected ? 'Connected' : 'Disconnected'));
+        }
+
+        function showMessage(message) {
+            // Display the message received from the server
+            console.log('Received message: ' + message);
+        }
+    </script>
+</body>
+</html>

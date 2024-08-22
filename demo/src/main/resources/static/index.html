@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test</title>
+    <style>
+        #response {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 400px;
+            height: 200px;
+            overflow-y: scroll;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Test</h2>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <br><br>
+    <input type="text" id="message" placeholder="Enter message here">
+    <button onclick="sendMessage()">Send Message</button>
+    <button onclick="fetchActiveSessions()">Fetch Active Sessions</button>
+    <div id="response"></div>
+
+    <script>
+        let webSocket = null;
+        let intervalId = null;
+
+        function connect() {
+            webSocket = new WebSocket('ws://localhost:8090/ws');
+            
+            webSocket.onopen = function(event) {
+                setConnected(true);
+                console.log('Connected to WebSocket server');
+                
+                // Automatically send a message every 10 seconds
+                intervalId = setInterval(function() {
+                    sendMessage();
+                }, 10000);
+            };
+
+            webSocket.onmessage = function(event) {
+                console.log('Message received from server:', event.data);
+                showMessage(event.data);
+            };
+            webSocket.onclose = function(event) {
+                setConnected(false);
+                clearInterval(intervalId);
+                console.log('Disconnected from WebSocket server');
+            };
+
+            webSocket.onerror = function(event) {
+                console.error('WebSocket error:', event);
+            };
+        }
+
+        function disconnect() {
+            if (webSocket !== null) {
+                webSocket.close();
+            }
+        }
+
+        function setConnected(connected) {
+            document.querySelector("button[onclick='connect()']").disabled = connected;
+            document.querySelector("button[onclick='disconnect()']").disabled = !connected;
+            document.querySelector("button[onclick='sendMessage()']").disabled = !connected;
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message').value || 'Hello, WebSocket!';
+            if (webSocket !== null && webSocket.readyState === WebSocket.OPEN) {
+                webSocket.send(message);
+                showMessage('Sent: ' + message); // Show the sent message in the response div
+            }
+        }
+
+        function showMessage(message) {
+            const response = document.getElementById('response');
+            const p = document.createElement('p');
+            p.textContent = message;
+            response.appendChild(p);
+            response.scrollTop = response.scrollHeight; // Scroll to the bottom
+        }
+
+        function fetchActiveSessions() {
+            fetch('/active-sessions')
+                .then(response => response.json())
+                .then(data => {
+                    showMessage('Active Sessions: ' + JSON.stringify(data));
+                })
+                .catch(error => {
+                    console.error('Error fetching active sessions:', error);
+                    showMessage('Error fetching active sessions');
+                });
+        }
+
+        // Initialize button states
+        setConnected(false);
+    </script>
+</body>
+</html>
